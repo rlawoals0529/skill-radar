@@ -27,7 +27,7 @@ This does. It embeds every description with a real model and compares them by me
 are marked **contested**, because in practice that is a coin flip.
 
 **Overlap.** Every pair, ranked by semantic similarity. Run against a real ten-skill set,
-the top pair shared **no quoted trigger at all** — the linter was structurally unable to
+the top pair shared **no quoted trigger at all** - the linter was structurally unable to
 report it, and it was a genuine duplication.
 
 **Cost.** Token counts from the model's own tokenizer for the description block, which is
@@ -72,7 +72,7 @@ returning `NaN` rather than a plausible-looking `0`, and a dimension mismatch th
 instead of silently comparing the overlap.
 
 The integration test is the one that matters, and it earned its place. It originally asserted
-that a deliberately-colliding pair would rank **first**. It ranked second — and the tool was
+that a deliberately-colliding pair would rank **first**. It ranked second - and the tool was
 right while the test was wrong, because a shared quoted phrase and semantic overlap are
 different measures. That is now what the test asserts, and a second test pins the actual
 value proposition: at least one strongly-similar pair shares no trigger phrase, so a linter
@@ -81,7 +81,7 @@ cannot see it.
 ## Built on
 
 [`skill-lint/core`](https://github.com/rlawoals0529/skill-lint) parses the skills and runs
-the structural rules. It is a dependency, not a copy — the parser exists once.
+the structural rules. It is a dependency, not a copy - the parser exists once.
 
 Model: `Xenova/all-MiniLM-L6-v2` via [Transformers.js](https://huggingface.co/docs/transformers.js),
 WebGPU where available and the default backend otherwise.

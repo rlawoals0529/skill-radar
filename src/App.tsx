@@ -161,7 +161,7 @@ export default function App() {
             value={pasted}
             onChange={(e) => setPasted(e.target.value)}
             placeholder="---&#10;name: my-skill&#10;description: ...&#10;---"
-            style={{ width: "100%", marginTop: 8, background: "#10101a", color: "var(--fg)", border: "1px solid var(--edge)", borderRadius: 9, padding: 10, font: "inherit" }}
+            style={{ marginTop: 8 }}
           />
           {/* An explicit action. Loading on blur is invisible: nothing tells you it happened,
               and nothing happens at all if you never click away. */}
@@ -315,7 +315,7 @@ export default function App() {
               </table>
               <p className="note">
                 Counted with the model's own tokenizer, not estimated. These are this model's tokens,
-                not your agent's — the number is a good proxy, not the exact bill.
+                not your agent's. A good proxy, not the exact bill.
               </p>
             </section>
           )}
