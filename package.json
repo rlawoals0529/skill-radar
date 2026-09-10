@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "test:integration": "SKILLS_DIR=../agent-skills vitest run test/"
+    "test:integration": "SKILLS_DIR=../agent-skills vitest run test/",
+    "e2e": "playwright test --grep-invert @model",
+    "e2e:model": "playwright test --grep @model --workers=1"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.0.0",
@@ -18,6 +20,7 @@
     "skill-lint": "github:rlawoals0529/skill-lint"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.1",
     "@vitejs/plugin-react": "^4.3.4",

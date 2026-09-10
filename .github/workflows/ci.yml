@@ -2,6 +2,8 @@ name: CI
 on:
   push: { branches: [main] }
   pull_request:
+  schedule: [{ cron: "17 4 * * *" }]
+  workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,3 +18,40 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: test-results/
+          retention-days: 7
+
+  e2e-model:
+    # The model lane downloads 23 MB from the model hub, which is too slow and too
+    # dependent on someone else's uptime to sit in front of every push. It still runs
+    # every night, so a broken load path is found within a day rather than at a demo.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm run e2e:model
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-model
+          path: test-results/
+          retention-days: 7
