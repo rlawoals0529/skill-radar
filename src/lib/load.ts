@@ -1,7 +1,7 @@
 /**
  * Getting skills in. Three ways, none of which involve a server of ours.
  */
-import { parseSkill, lintSkills, type Skill, type Finding } from "skill-lint/core";
+import { parseSkill, lintSkills, type Skill, type Finding } from "agent-skill-lint/core";
 
 export interface Loaded {
   skills: Skill[];

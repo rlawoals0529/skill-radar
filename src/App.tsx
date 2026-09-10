@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { Skill, Finding } from "skill-lint/core";
+import type { Skill, Finding } from "agent-skill-lint/core";
 import { fromDirectory, fromFiles, fromGitHub, fromText, type Loaded } from "./lib/load.js";
 import type { Progress } from "./lib/embed.js";
 import { Ticker, stagger } from "./lib/motion.js";
