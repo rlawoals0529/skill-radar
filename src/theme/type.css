@@ -1,0 +1,21 @@
+/* Neon Sign - Syne + Manrope.
+
+   Syne is wide, high-contrast and slightly strange, which is exactly what a heading is
+   for: it has to be recognisable at a glance and it is read once. Manrope carries the
+   body without imitating it.
+
+   Deliberately not Inter. Inter is the default of every generated page, and using it is
+   the fastest way to look like one.
+
+   Load: https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&family=Syne:wght@600;700;800&display=swap */
+:root {
+  --font-display: "Syne", "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Manrope", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --display-weight: 700;
+  /* Tracking is optical, not fixed: big text needs it negative, small text does not.
+     This value applies only at display sizes. */
+  --display-tracking: -0.5px;
+  --display-leading: 1.02;
+}

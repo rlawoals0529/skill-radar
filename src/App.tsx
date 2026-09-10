@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import type { Skill, Finding } from "skill-lint/core";
 import { fromDirectory, fromFiles, fromGitHub, fromText, type Loaded } from "./lib/load.js";
 import type { Progress } from "./lib/embed.js";
+import { Ticker, stagger } from "./lib/motion.js";
 import { rank, pairs, type Ranked, type Pair } from "./lib/similarity.js";
 
 interface Vectored {
@@ -237,14 +238,18 @@ export default function App() {
 
               {ranked && (
                 <div style={{ display: "grid", gap: 7, marginTop: 14 }}>
-                  {ranked.map((r) => (
-                    <div key={r.name} className={r.contested ? "bar contested" : "bar"}>
+                  {ranked.map((r, i) => (
+                    <div
+                      key={r.name}
+                      className={r.contested ? "bar contested rise" : "bar rise"}
+                      style={stagger(i)}
+                    >
                       <i style={{ width: `${Math.max(0, r.score) * 100}%` }} />
                       <span>
                         <b>
                           {r.name} {r.contested && <span className="pill warn">contested</span>}
                         </b>
-                        <code>{r.score.toFixed(3)}</code>
+                        <code><Ticker value={r.score} decimals={3} /></code>
                       </span>
                     </div>
                   ))}
