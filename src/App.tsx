@@ -17,6 +17,7 @@ const DEMO_REPO = "rlawoals0529/agent-skills";
 export default function App() {
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [vectors, setVectors] = useState<Vectored[] | null>(null);
+  const [backend, setBackend] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,6 @@ export default function App() {
   const [repo, setRepo] = useState(DEMO_REPO);
   const [over, setOver] = useState(false);
   const [pasted, setPasted] = useState("");
-  const hasWebGPU = typeof navigator !== "undefined" && "gpu" in navigator;
   const fileInput = useRef<HTMLInputElement>(null);
 
   const guard = useCallback(async (label: string, fn: () => Promise<void>) => {
@@ -56,8 +56,9 @@ export default function App() {
     () =>
       guard("Loading the model and embedding", async () => {
         if (!loaded) return;
-        const { loadModel, embed, countTokens } = await engine();
+        const { loadModel, embed, countTokens, backendInUse } = await engine();
         await loadModel(setProgress);
+        setBackend(backendInUse());
         const out: Vectored[] = [];
         for (const skill of loaded.skills) {
           // Route on the description, because that is what a harness actually reads.
@@ -192,7 +193,7 @@ export default function App() {
               {vectors ? "Re-embed" : "Load model and embed"}
             </button>
             <span className="note" style={{ margin: 0 }}>
-              ~23 MB, once. Backend: <b>{hasWebGPU ? "webgpu" : "wasm"}</b>.
+              ~23 MB, once.{backend && <> Ran on <b>{backend}</b>.</>}
             </span>
           </div>
           {busy && (

@@ -84,6 +84,6 @@ cannot see it.
 the structural rules. It is a dependency, not a copy - the parser exists once.
 
 Model: `Xenova/all-MiniLM-L6-v2` via [Transformers.js](https://huggingface.co/docs/transformers.js),
-WebGPU where available and the default backend otherwise.
+WebGPU where an adapter is really available, WebAssembly everywhere else.
 
 MIT
