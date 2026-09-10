@@ -1,0 +1,28 @@
+{
+  "name": "skill-radar",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:integration": "SKILLS_DIR=../agent-skills vitest run test/"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "skill-lint": "github:rlawoals0529/skill-lint"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vitest": "^2.1.8"
+  }
+}
