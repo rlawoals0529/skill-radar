@@ -40,7 +40,7 @@ paid for on every single turn. Most people estimate this. Nobody measures it.
 - **Load a public GitHub repo**, so the demo works with no local files
 - **Paste one skill**, to try a single description
 
-## What this is not
+## Limitations
 
 Cosine similarity over descriptions is **not** how any particular agent harness routes. This
 is a proxy that surfaces overlap and cost, not a simulation of a specific router. Treat a
