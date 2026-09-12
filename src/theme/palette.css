@@ -1,0 +1,114 @@
+/* Vendored from yozora/css/palette.css. Refresh with `node scripts/vendor.mjs` there,
+   never edit here. */
+/* The palette picker.
+
+   Every option paints itself in the palette it offers, so the control shows the four things
+   that differ between two themes - the page ground, a panel on it, the ink, and both accents -
+   arranged the way they sit on a real page. A row of identical chips beside fifteen names is a
+   list you have to try one at a time, which is exactly what this is meant to replace.
+
+   Vendored with js/palette.tsx. Nothing here invents a colour. */
+
+.palette { margin-top: 2rem; }
+
+/* layout-flat.css turns every button into a word you can click: dim, underlined on hover, and
+   carrying an 18px right margin so a row of them does not run together. Neither control here
+   is that kind of button - one is a pill and the others are specimens in a grid, where the
+   margin lands on top of the grid gap and the underline appears under a palette's name. Reset
+   for these two only, rather than weakening the rule for every other button on the page. */
+.palette-toggle,
+.palette .swatch {
+  margin: 0;
+  text-decoration: none;
+}
+/* Its own palette, not the page it is sitting on: data-theme is on this element. */
+.palette .swatch { color: var(--fg); }
+
+.palette-toggle {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  background: none; border: 1px solid var(--edge-strong, var(--edge)); border-radius: 999px;
+  padding: 0.3rem 0.8rem; color: var(--dim); font: inherit; font-size: 0.85rem;
+  cursor: pointer; min-height: 34px;
+  transition: color 140ms ease-out, border-color 140ms ease-out;
+}
+.palette-toggle:hover { color: var(--fg); border-color: var(--accent-text, var(--accent)); }
+.palette-toggle:focus-visible { outline: 2px solid var(--accent-text, var(--accent)); outline-offset: 2px; }
+
+/* The chip on the toggle carries its own data-theme, so it shows the palette you are in. */
+.palette-chip {
+  width: 0.9rem; height: 0.9rem; border-radius: 50%;
+  background: var(--accent); border: 1px solid var(--edge); flex: none;
+}
+
+/* `display` on a class beats the user agent's `[hidden] { display: none }`, because author
+   styles win over the UA sheet whatever the specificity. Guarding the rule is what keeps a
+   closed disclosure closed rather than merely labelled closed. */
+.palette-list:not([hidden]) { display: block; margin-top: 0.9rem; }
+
+/* Rare, and opened on purpose, so it can arrive rather than appear. 4px and 180ms: enough to
+   say where it came from, not enough to wait for. */
+@media (prefers-reduced-motion: no-preference) {
+  .palette-list:not([hidden]) { animation: palette-open 180ms cubic-bezier(.2, .7, .3, 1); }
+}
+@keyframes palette-open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+.palette-grid { display: grid; gap: 1.1rem; }
+.palette-group-name {
+  font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--dim); margin-bottom: 0.5rem;
+}
+.palette-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+/* One option: a small page in that palette, with its name under it. */
+.swatch {
+  display: grid; gap: 0.4rem;
+  padding: 0.4rem;
+  /* --bg and --panel come from the option's OWN data-theme, which is what makes the swatch a
+     specimen rather than a label. */
+  background: var(--bg);
+  border: 1px solid var(--edge-strong, var(--edge));
+  border-radius: calc(var(--radius) - 4px);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  /* Transform and opacity only. A border-width change here would relayout the whole grid. */
+  transition: box-shadow 140ms ease-out, transform 140ms ease-out;
+}
+.swatch:hover { transform: translateY(-1px); }
+.swatch:focus-visible { outline: 2px solid var(--accent-text, var(--accent)); outline-offset: 2px; }
+/* The chosen one is ringed in its own accent, which is legible on its own ground by
+   construction. A colour change alone would be the only signal, and on a palette whose accent
+   is close to its edge that is no signal at all. */
+.swatch[aria-checked="true"] { box-shadow: inset 0 0 0 2px var(--accent-text, var(--accent)); }
+
+.swatch-page {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.4rem 0.45rem;
+  background: var(--panel);
+  border-radius: calc(var(--radius) - 8px);
+}
+.swatch-ink {
+  font-family: var(--font-display, inherit);
+  font-size: 0.8rem; line-height: 1;
+  color: var(--fg);
+  margin-right: auto;
+}
+.swatch-dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; flex: none; }
+.swatch-dot.accent { background: var(--accent); }
+.swatch-dot.second { background: var(--accent-2, var(--accent)); }
+
+.swatch-name {
+  font-size: 0.72rem;
+  color: var(--dim);
+  padding-inline: 0.15rem;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.palette-hint { margin-top: 0.8rem; font-size: 0.72rem; color: var(--dim); }

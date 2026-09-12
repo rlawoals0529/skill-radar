@@ -1,4 +1,5 @@
 @import "./theme/palettes.css";
+@import "./theme/palette.css";
 @import "./theme/base.css";
 @import "./theme/layout-flat.css";
 @import "./theme/motion.css";
@@ -55,37 +56,6 @@ textarea {
 
 tr.hot td { background: color-mix(in srgb, var(--warn) 12%, transparent); }
 
-/* ---- Palette picker ----------------------------------------------------------------------
-   Vendored palettes from yozora, switched by one attribute on the root element. Closed by
-   default: a preference is not part of the task. */
-
-.palette { margin-top: 2rem; }
-.palette-toggle,
-.palette-list button {
-  display: inline-flex; align-items: center; gap: 0.5rem;
-  background: none; border: 1px solid var(--edge); border-radius: 999px;
-  padding: 0.3rem 0.8rem; color: var(--dim); font: inherit; font-size: 0.85rem;
-  cursor: pointer; min-height: 34px;
-}
-.palette-toggle:hover,
-.palette-list button:hover { color: var(--fg); border-color: var(--accent); }
-.palette-list button[aria-pressed="true"] { border-color: var(--accent); color: var(--fg); }
-
-/* Each chip carries its own data-theme, so it paints in the palette it selects. Without that
-   they are fifteen chips in the colour you are already looking at. */
-.palette-chip {
-  width: 0.9rem; height: 0.9rem; border-radius: 50%;
-  background: var(--accent); border: 1px solid var(--edge); flex: none;
-}
-
-/* `display` on a class beats the user agent's `[hidden] { display: none }`, because author
-   styles win over the UA sheet whatever the specificity. So this list was permanently open:
-   the button said aria-expanded="false" over fifteen visible, tabbable options. Guarding the
-   rule is the fix; `[hidden] { display: none !important }` would work too and would hide the
-   next bug of this shape instead of failing on it. */
-.palette-list:not([hidden]) { margin-top: 0.8rem; display: grid; gap: 0.9rem; }
-.palette-list fieldset { border: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.palette-list legend {
-  font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
-  color: var(--dim); margin-bottom: 0.4rem;
-}
+/* The palette picker is vendored: theme/palette.css plus src/lib/palette.tsx. It used to be
+   sixty lines of markup and eighty of CSS in every app that had one, differing by a comment
+   and a storage key. */
