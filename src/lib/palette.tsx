@@ -33,9 +33,18 @@ export interface PaletteProps {
   storageKey: string;
   /** The palette a first visit gets. */
   initial?: string;
+  /**
+   * Show the options without a disclosure around them.
+   *
+   * For a page that already has somewhere for a preference to live - a settings tab, a
+   * sidebar - where a toggle would be a second door in front of a door somebody has already
+   * opened. The toggle is the default because on most of these pages the picker sits at the
+   * bottom of the work, and a preference is not part of the task.
+   */
+  inline?: boolean;
 }
 
-export function Palette({ themes: manifest, storageKey, initial = "twilight-comet" }: PaletteProps) {
+export function Palette({ themes: manifest, storageKey, initial = "twilight-comet", inline = false }: PaletteProps) {
   // Narrowed here rather than cast at every call site: a JSON import types `scheme` as string,
   // and an unknown value is dark, which is the same rule the manifest was written with.
   const themes = useMemo<Theme[]>(
@@ -44,7 +53,7 @@ export function Palette({ themes: manifest, storageKey, initial = "twilight-come
   );
   const [store] = useState(() => createThemeStore(themes, initial, storageKey));
   const [theme, setTheme] = useState(store.initial);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(inline);
   /** What to put back if this is abandoned rather than decided. */
   const committed = useRef(theme);
   const group = useRef<HTMLDivElement>(null);
@@ -85,9 +94,10 @@ export function Palette({ themes: manifest, storageKey, initial = "twilight-come
     }
     if (e.key === "Escape") {
       e.preventDefault();
-      // Back to what was on the page when the list was opened. Without this, sweeping through
+      // Back to what was on the page when this was reached. Without it, sweeping through
       // fifteen palettes to look at them leaves you on whichever one you stopped at.
       setTheme(committed.current);
+      if (inline) return;
       setOpen(false);
       group.current?.closest(".palette")?.querySelector<HTMLButtonElement>(".palette-toggle")?.focus();
     }
@@ -101,25 +111,38 @@ export function Palette({ themes: manifest, storageKey, initial = "twilight-come
   };
 
   return (
-    <section className="palette">
-      <button
-        className="palette-toggle"
-        aria-expanded={open}
-        aria-controls={listId}
-        onClick={toggle}
-      >
-        <span className="palette-chip" aria-hidden="true" data-theme={theme} />
-        {/*
-          The toggle says what it DOES, not only which palette is on. Without the word the
-          button and the option for the same palette share an accessible name, so a screen
-          reader announces "Sakura Lake button" twice for two different controls.
-        */}
-        <span className="sr-only">Palette: </span>
-        {current?.label ?? "Palette"}
-      </button>
+    <section className={inline ? "palette palette-inline" : "palette"}>
+      {!inline && (
+        <button
+          className="palette-toggle"
+          aria-expanded={open}
+          aria-controls={listId}
+          onClick={toggle}
+        >
+          <span className="palette-chip" aria-hidden="true" data-theme={theme} />
+          {/*
+            The toggle says what it DOES, not only which palette is on. Without the word the
+            button and the option for the same palette share an accessible name, so a screen
+            reader announces "Sakura Lake button" twice for two different controls.
+          */}
+          <span className="sr-only">Palette: </span>
+          {current?.label ?? "Palette"}
+        </button>
+      )}
 
       <div id={listId} hidden={!open} className="palette-list">
-        <div className="palette-grid" role="radiogroup" aria-label="Palette" ref={group}>
+        <div
+          className="palette-grid"
+          role="radiogroup"
+          aria-label="Palette"
+          ref={group}
+          /* What Escape puts back is whatever was on the page when this group was reached,
+             which is not always when a disclosure was opened: inline there is no disclosure,
+             and with a mouse the list can be opened long before anything is tried. */
+          onFocusCapture={(e) => {
+            if (!group.current?.contains(e.relatedTarget as Node | null)) committed.current = theme;
+          }}
+        >
           {grouped(themes).map((g) => (
             <div className="palette-group" key={g.scheme}>
               <p className="palette-group-name" aria-hidden="true">{g.label}</p>

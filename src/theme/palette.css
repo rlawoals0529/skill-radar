@@ -112,3 +112,8 @@
 }
 
 .palette-hint { margin-top: 0.8rem; font-size: 0.72rem; color: var(--dim); }
+
+/* Inline: the options with no disclosure in front of them, for a page that already has
+   somewhere a preference belongs. Nothing about the options themselves changes. */
+.palette-inline { margin-top: 0; }
+.palette-inline .palette-list { margin-top: 0; }
