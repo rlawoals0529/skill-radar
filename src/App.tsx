@@ -4,6 +4,7 @@ import { fromDirectory, fromFiles, fromGitHub, fromText, type Loaded } from "./l
 import type { Progress } from "./lib/embed.js";
 import { Ticker, stagger } from "./lib/motion.js";
 import { rank, pairs, type Ranked, type Pair } from "./lib/similarity.js";
+import { Palette } from "./Palette";
 
 interface Vectored {
   skill: Skill;
@@ -367,6 +368,7 @@ export default function App() {
           a contested pair as a prompt to go and read both descriptions, not as a verdict.
         </p>
       </section>
+      <Palette />
     </div>
   );
 }

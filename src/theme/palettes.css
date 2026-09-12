@@ -1,0 +1,259 @@
+/* Vendored from yozora/css/*.css. Refresh with `node scripts/vendor.mjs` there,
+   never edit here. */
+
+/* Every palette, rescoped from :root to [data-theme] so one attribute switches them. */
+
+[data-theme="amethyst-yokai"] {
+  --bg: hsl(352 11.6% 6.5%);
+  --panel: hsl(352 9.8% 10.5%);
+  --raised: hsl(352 8.9% 15%);
+  --accent: #d1364a;
+  --accent-2: #c9bfe0;
+  --fg: #f7f0fa;
+  --dim: #966a70;
+  --edge: #683a40;
+  --ok: #6fcf97;
+  --warn: #e08a4d;
+  --err: #ff5d6b;
+  --caution: #e08a4d;
+  --radius: 12px;
+  color-scheme: dark;
+}
+
+[data-theme="cherry-blossom-dusk"] {
+  --bg: hsl(335 17.4% 97%);
+  --panel: hsl(335 23.6% 99.5%);
+  --raised: hsl(335 15.4% 94%);
+  --accent: #c2477a;
+  --accent-2: #6f7fc2;
+  --fg: #2a1f38;
+  --dim: #a68fae;
+  --edge: #d9bcd9;
+  --ok: #3f8f6a;
+  --warn: #d19a4a;
+  --err: #c2493b;
+  --caution: #d19a4a;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+[data-theme="coral-horizon"] {
+  --bg: hsl(15 10.2% 6.5%);
+  --panel: hsl(15 8.6% 10.5%);
+  --raised: hsl(15 7.8% 15%);
+  --accent: #ff8f6b;
+  --accent-2: #7fd0d9;
+  --fg: #f7ecdd;
+  --dim: #a8897f;
+  --edge: #7a564a;
+  --ok: #5fd9a0;
+  --warn: #ffb56b;
+  --err: #ff6b6b;
+  --caution: #ffb56b;
+  --radius: 12px;
+  color-scheme: dark;
+}
+
+[data-theme="falling-stars"] {
+  --bg: hsl(231 33.3% 97%);
+  --panel: hsl(231 45.1% 99.5%);
+  --raised: hsl(231 29.4% 94%);
+  --accent: #6f7fd6;
+  --accent-2: #c26bab;
+  --fg: #221f3c;
+  --dim: #938fbc;
+  --edge: #c0bce8;
+  --ok: #3f8f6a;
+  --warn: #d19a4a;
+  --err: #c2493b;
+  --caution: #d19a4a;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+[data-theme="moonlit-skyline"] {
+  --bg: hsl(37 13.0% 97%);
+  --panel: hsl(37 17.6% 99.5%);
+  --raised: hsl(37 11.5% 94%);
+  --accent: #e0a13f;
+  --accent-2: #c2699e;
+  --fg: #3a2540;
+  --dim: #b4a68f;
+  --edge: #e0d0b8;
+  --ok: #4a9f6e;
+  --warn: #e0a13f;
+  --err: #c2493b;
+  --caution: #e0a13f;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+[data-theme="moonlit-village"] {
+  --bg: hsl(214 26.0% 6.5%);
+  --panel: hsl(214 22.0% 10.5%);
+  --raised: hsl(214 20.0% 15%);
+  --accent: #6fa4e8;
+  --accent-2: #7fc9d1;
+  --fg: #eef3fc;
+  --dim: #5a7096;
+  --edge: #2f4d78;
+  --ok: #4fae8a;
+  --warn: #f5a94f;
+  --err: #ff6b6b;
+  --caution: #f5a94f;
+  --radius: 12px;
+  color-scheme: dark;
+}
+
+[data-theme="neko-lantern"] {
+  --bg: hsl(15 13.3% 97%);
+  --panel: hsl(15 18.0% 99.5%);
+  --raised: hsl(15 11.7% 94%);
+  --accent: #d9663f;
+  --accent-2: #3f7fc7;
+  --fg: #1e2340;
+  --dim: #b09187;
+  --edge: #dec2b9;
+  --ok: #3f8f6a;
+  --warn: #d19a4a;
+  --err: #c2493b;
+  --caution: #d9663f;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+[data-theme="plushie-pink"] {
+  --bg: hsl(326 18.8% 97%);
+  --panel: hsl(326 25.5% 99.5%);
+  --raised: hsl(326 16.6% 94%);
+  --accent: #d94f9e;
+  --accent-2: #6f8fd6;
+  --fg: #3a1f34;
+  --dim: #b891ad;
+  --edge: #e6bcd8;
+  --ok: #4a9f6e;
+  --warn: #d19a4a;
+  --err: #c2493b;
+  --caution: #d19a4a;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+[data-theme="rain-lantern"] {
+  --bg: hsl(15 10.2% 6.5%);
+  --panel: hsl(15 8.6% 10.5%);
+  --raised: hsl(15 7.8% 15%);
+  --accent: #ff7a4d;
+  --accent-2: #3fb8b0;
+  --fg: #f7f0fa;
+  --dim: #967a71;
+  --edge: #704e42;
+  --ok: #6fcf97;
+  --warn: #ffb877;
+  --err: #ff5d6b;
+  --caution: #ffb877;
+  --radius: 12px;
+  color-scheme: dark;
+}
+
+[data-theme="rooftop-dusk"] {
+  --bg: hsl(341 12.7% 6.5%);
+  --panel: hsl(341 10.7% 10.5%);
+  --raised: hsl(341 9.7% 15%);
+  --accent: #f2789e;
+  --accent-2: #5fa0b0;
+  --fg: #f5eef2;
+  --dim: #a07b87;
+  --edge: #805260;
+  --ok: #6fcf97;
+  --warn: #ffb066;
+  --err: #ff6b6b;
+  --caution: #ffb066;
+  --radius: 12px;
+  color-scheme: dark;
+}
+
+[data-theme="sakura-lake"] {
+  --bg: hsl(34 12.9% 97%);
+  --panel: hsl(34 17.5% 99.5%);
+  --raised: hsl(34 11.4% 94%);
+  --accent: #e0932c;
+  --accent-2: #1c7a91;
+  --fg: #2a2013;
+  --dim: #a08a68;
+  --edge: #c2ac82;
+  --ok: #3f8f5c;
+  --warn: #e0932c;
+  --err: #c23b3b;
+  --caution: #e0932c;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+[data-theme="sakura-road"] {
+  --bg: hsl(329 18.4% 97%);
+  --panel: hsl(329 24.8% 99.5%);
+  --raised: hsl(329 16.2% 94%);
+  --accent: #e0559c;
+  --accent-2: #2a9a9a;
+  --fg: #1c2c1a;
+  --dim: #9a7c8b;
+  --edge: #d3a9be;
+  --ok: #2f8f52;
+  --warn: #b8802a;
+  --err: #c23b3b;
+  --caution: #b8802a;
+  --radius: 12px;
+  color-scheme: light;
+}
+
+[data-theme="starfall-dusk"] {
+  --bg: hsl(351 11.7% 6.5%);
+  --panel: hsl(351 9.9% 10.5%);
+  --raised: hsl(351 9.0% 15%);
+  --accent: #ff5f78;
+  --accent-2: #cfd6ff;
+  --fg: #f5f0ff;
+  --dim: #966a71;
+  --edge: #70454c;
+  --ok: #6fe0a8;
+  --warn: #ffb15c;
+  --err: #ff4d5e;
+  --caution: #ffb15c;
+  --radius: 12px;
+  color-scheme: dark;
+}
+
+[data-theme="twilight-comet"] {
+  --bg: hsl(247 24.4% 6.5%);
+  --panel: hsl(247 20.6% 10.5%);
+  --raised: hsl(247 18.8% 15%);
+  --accent: #8b7cf6;
+  --accent-2: #4fd8c4;
+  --fg: #eef1ff;
+  --dim: #6b7394;
+  --edge: #4b5170;
+  --ok: #4fd8c4;
+  --warn: #f5b878;
+  --err: #ff5d73;
+  --caution: #f5b878;
+  --radius: 12px;
+  color-scheme: dark;
+}
+
+[data-theme="wisteria-alley"] {
+  --bg: hsl(257 30.6% 97%);
+  --panel: hsl(257 41.5% 99.5%);
+  --raised: hsl(257 27.0% 94%);
+  --accent: #8b6fd1;
+  --accent-2: #3f9ecf;
+  --fg: #221f3a;
+  --dim: #948fb8;
+  --edge: #c1bce6;
+  --ok: #3f8f6a;
+  --warn: #d19a4a;
+  --err: #c2493b;
+  --caution: #d19a4a;
+  --radius: 12px;
+  color-scheme: light;
+}
