@@ -44,6 +44,8 @@ test("arrowing tries each palette on the page, and Escape puts back the one you 
   await toggle(page).click();
 
   const started = await page.evaluate(() => document.documentElement.getAttribute("data-theme"));
+  const paint = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const paintedBefore = await paint();
   await page.locator('[role="radio"][aria-checked="true"]').focus();
   await page.keyboard.press("ArrowRight");
 
@@ -52,6 +54,9 @@ test("arrowing tries each palette on the page, and Escape puts back the one you 
     .poll(() => page.evaluate(() => document.documentElement.getAttribute("data-theme")))
     .not.toBe(started);
   await expect(page.locator('[role="radio"][aria-checked="true"]')).toBeFocused();
+  // And the PAGE changed, not just the attribute. An attribute that nothing is scoped to is a
+  // picker that looks like it works.
+  await expect.poll(paint).not.toBe(paintedBefore);
 
   await page.keyboard.press("Escape");
   // Without this, sweeping through fifteen palettes to look at them leaves you on whichever
@@ -75,6 +80,8 @@ test("a chosen palette survives a reload, colour scheme and all", async ({ page 
 
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "sakura-lake");
+  // Before first paint, or the page shows one palette and swaps to another in front of you.
+  expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).not.toBe("rgba(0, 0, 0, 0)");
 });
 
 test("each option is a specimen of its own palette, and its name is not", async ({ page }) => {
