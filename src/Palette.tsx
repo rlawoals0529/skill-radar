@@ -3,7 +3,7 @@ import manifest from "./theme/palettes.json";
 import { createThemeStore, grouped, type Theme } from "./lib/theme";
 
 const THEMES = manifest as Theme[];
-const store = createThemeStore(THEMES, "rooftop-dusk", "skill-radar:theme");
+const store = createThemeStore(THEMES, "twilight-comet", "skill-radar:theme");
 
 /**
  * Fifteen palettes, behind a disclosure.
