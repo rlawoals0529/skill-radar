@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cosine, rank, pairs } from "./similarity.js";
+import { cosine, rank, pairs, axisFor } from "./similarity.js";
 
 const v = (...n: number[]) => Float32Array.from(n);
 
@@ -68,5 +68,49 @@ describe("pairs", () => {
   });
   it("has no pairs for a single skill", () => {
     expect(pairs([{ name: "solo", vector: v(1, 0) }])).toEqual([]);
+  });
+});
+
+describe("axisFor", () => {
+  const r = (name: string, score: number, contested = false) => ({ name, score, contested });
+
+  it("spreads the scores across the axis rather than pinning them to zero", () => {
+    const axis = axisFor([r("a", 0.72), r("b", 0.70), r("c", 0.41)]);
+    // The lowest score is not at the left edge and the highest is not at the right: both sit
+    // inside the padding, so a marker is never half off the plot.
+    expect(axis.at(0.41)).toBeGreaterThan(0);
+    expect(axis.at(0.72)).toBeLessThan(1);
+    expect(axis.at(0.41)).toBeLessThan(axis.at(0.70));
+    expect(axis.at(0.70)).toBeLessThan(axis.at(0.72));
+  });
+
+  it("makes the margin a gap you can see", () => {
+    // On a fixed 0..1 axis, 0.02 between the top two is two percent of the width. Zoomed to
+    // the data it is the thing the picture is about.
+    const axis = axisFor([r("a", 0.72), r("b", 0.70), r("c", 0.41)]);
+    expect(axis.at(0.72) - axis.at(0.70)).toBeGreaterThan(0.04);
+  });
+
+  it("marks the coin-flip window only when something is actually in it", () => {
+    const contested = axisFor([r("a", 0.72, true), r("b", 0.71, true)]);
+    expect(contested.contested).toEqual({ from: 0.7, to: 0.72 });
+
+    const clear = axisFor([r("a", 0.72), r("b", 0.40)]);
+    expect(clear.contested).toBeNull();
+  });
+
+  it("survives one skill, and ten identical ones, without dividing by zero", () => {
+    for (const list of [[r("a", 0.5)], [r("a", 0.5), r("b", 0.5)], []]) {
+      const axis = axisFor(list);
+      expect(Number.isFinite(axis.at(0.5))).toBe(true);
+      expect(axis.at(0.5)).toBeGreaterThanOrEqual(0);
+      expect(axis.at(0.5)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("keeps a score from outside the range inside the plot", () => {
+    const axis = axisFor([r("a", 0.6), r("b", 0.5)]);
+    expect(axis.at(-1)).toBe(0);
+    expect(axis.at(99)).toBe(1);
   });
 });

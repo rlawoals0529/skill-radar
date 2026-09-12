@@ -32,19 +32,6 @@ textarea {
   background: none;
 }
 
-/* A ranked score. The fill is the shape; an outline would draw the empty part too. */
-.bar {
-  position: relative; height: 42px; border-radius: 3px;
-  background: color-mix(in srgb, var(--fg) 4%, transparent); overflow: hidden;
-}
-.bar > i { position: absolute; inset: 0 auto 0 0; background: var(--accent); opacity: .34; }
-.bar.contested > i { background: var(--warn); opacity: .38; }
-.bar > span {
-  position: absolute; inset: 0; display: flex; align-items: center;
-  justify-content: space-between; padding: 0 14px; font-size: 13.5px;
-}
-.bar code { font-size: 12.5px; color: var(--dim); }
-
 /* Tabs as words with the active one underlined, rather than three more boxes. */
 .tabs { display: flex; gap: 24px; margin-top: 40px; flex-wrap: wrap; }
 .tabs button {
@@ -59,3 +46,75 @@ tr.hot td { background: color-mix(in srgb, var(--warn) 12%, transparent); }
 /* The palette picker is vendored: theme/palette.css plus src/lib/palette.tsx. It used to be
    sixty lines of markup and eighty of CSS in every app that had one, differing by a comment
    and a storage key. */
+
+/* ---- The routing plot --------------------------------------------------------------------
+   Every skill on one axis, rather than a column of bars drawn from a shared left edge.
+
+   Two skills the model cannot separate are the finding here, and bars cannot show it: they
+   all start at the same place, so a pair that differs by a percent differs by a few pixels
+   at the far end and the eye reads them as equal-ish rather than as the same. On one axis
+   they land on the same spot, inside a window that says so. */
+
+.plot { position: relative; margin-top: 16px; display: grid; gap: 4px; }
+
+/* The coin-flip window, behind every row. 0.02 wide in score, whatever that is in pixels
+   once the axis has zoomed to the scores. */
+.window {
+  position: absolute;
+  top: 0;
+  bottom: 18px;
+  background: color-mix(in srgb, var(--warn, var(--dim)) 16%, transparent);
+  border-inline: 1px solid color-mix(in srgb, var(--warn, var(--dim)) 55%, transparent);
+  pointer-events: none;
+}
+
+.reading {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 13rem) 1fr auto;
+  gap: 14px;
+  align-items: center;
+  font-size: 13px;
+  padding: 3px 0;
+}
+.reading-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reading[data-contested="true"] .reading-name { color: var(--warn, var(--fg)); font-weight: 600; }
+
+/* The track is the axis. A hairline, because the marks are the data and a full-height lane
+   per row would rebuild the column of bars this replaced. */
+.track { position: relative; height: 14px; }
+.track::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--edge);
+}
+.mark {
+  position: absolute;
+  top: 1px;
+  width: 3px;
+  height: 12px;
+  margin-left: -1.5px;
+  border-radius: 1px;
+  background: var(--accent-2);
+}
+.reading[data-contested="true"] .mark { background: var(--warn, var(--accent)); width: 4px; margin-left: -2px; }
+
+.reading-score { font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+/* Both ends of the axis, with their real values. The axis is zoomed to the scores, so
+   without these a gap of 0.02 and a gap of 0.4 look the same. */
+.axis-ends {
+  display: flex;
+  justify-content: space-between;
+  /* Aligned to the track, not to the row: the labels have to sit under the axis they label. */
+  margin-left: calc(13rem + 14px);
+  margin-right: calc(2.6rem + 14px);
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}

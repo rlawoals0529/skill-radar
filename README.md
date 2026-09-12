@@ -3,7 +3,7 @@
 Load a folder of agent skills, type what a user would actually say, and see which skills
 would fire.
 
-![Routing view: a skill ranked against an utterance, with its score](docs/screenshot.png)
+![Routing view: four skills as marks on one axis, with the two contested ones landing inside a shaded 0.02 window](docs/screenshot.png)
 
 **Runs entirely in your browser.** No API key, no account, no server of mine. The model is
 fetched once and cached, after which the page works offline. Nothing you load is uploaded
@@ -27,8 +27,12 @@ This does. It embeds every description with a real model and compares them by me
 
 ## Three views
 
-**Routing.** Type an utterance, get every skill ranked. Two skills within 0.02 of each other
-are marked **contested**, because in practice that is a coin flip.
+**Routing.** Type an utterance and every skill goes on one axis. Two within 0.02 of each
+other are **contested**, because in practice that is a coin flip - and they land in the same
+place, inside a window drawn 0.02 wide, so the toss-up is something you see rather than a
+word beside a number. The axis is zoomed to the scores and says so at both ends: real
+utterances cluster in a narrow band, and on a fixed 0 to 1 axis the margin that decides the
+answer is a pixel.
 
 **Overlap.** Every pair, ranked by semantic similarity. Run against a real ten-skill set,
 the top pair shared **no quoted trigger at all** - the linter was structurally unable to

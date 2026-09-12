@@ -33,17 +33,97 @@ test.describe("@model", () => {
       .fill("the PR came back with comments I need to address");
     await page.getByRole("button", { name: "Rank" }).click();
 
-    const bars = page.locator(".bar");
-    await expect(bars).toHaveCount(skillFiles.length);
+    const readings = page.locator(".reading");
+    await expect(readings).toHaveCount(skillFiles.length);
 
     // "PR" never appears in any description and "pull request" never appears in the
     // utterance, so a string match cannot get this right. changelog-writer is the decoy:
     // it shares "changes" with the utterance and means something else entirely.
-    await expect(bars.first()).toContainText("pr-review-followup");
+    await expect(readings.first()).toContainText("pr-review-followup");
 
     const scoreOf = async (name: string) =>
-      Number(await bars.filter({ hasText: name }).locator("code").innerText());
+      Number(await readings.filter({ hasText: name }).locator("code").innerText());
     expect(await scoreOf("pr-review-followup")).toBeGreaterThan(await scoreOf("changelog-writer"));
+
+    // Every skill on one axis: a higher score is further right, and the marks are what says
+    // so. A column of bars from a shared left edge cannot show two skills landing together.
+    const marks = await readings.evaluateAll((els) =>
+      els.map((el) => ({
+        name: el.querySelector(".reading-name")!.textContent!.trim(),
+        score: Number(el.querySelector("code")!.textContent),
+        x: (el.querySelector(".mark") as HTMLElement).getBoundingClientRect().left,
+      })),
+    );
+    for (let i = 1; i < marks.length; i++) {
+      if (marks[i]!.score < marks[i - 1]!.score) {
+        expect(marks[i]!.x, `${marks[i]!.name} scores lower but sits further right`).toBeLessThan(marks[i - 1]!.x);
+      }
+    }
+
+    // And the axis says what it is zoomed to, or a gap of 0.02 and a gap of 0.4 look alike.
+    const ends = await page.locator(".axis-ends span").allTextContents();
+    expect(ends).toHaveLength(2);
+    expect(Number(ends[0])).toBeLessThan(Number(ends[1]));
+    expect(Number(ends[0])).toBeLessThanOrEqual(Math.min(...marks.map((m) => m.score)));
+    expect(Number(ends[1])).toBeGreaterThanOrEqual(Math.max(...marks.map((m) => m.score)));
+
+    /*
+     * The axis is ZOOMED, and that is the part worth checking.
+     *
+     * Ordering alone does not check it: marks plotted at their raw score on a fixed 0 to 1
+     * axis come out in the same order, so the assertions above pass either way. What zooming
+     * buys is that the scores fill the axis instead of huddling in a tenth of it, and that is
+     * what to measure - the spread of the readings against the span the ends report.
+     */
+    const spread = Math.max(...marks.map((m) => m.score)) - Math.min(...marks.map((m) => m.score));
+    const span = Number(ends[1]) - Number(ends[0]);
+    expect(span).toBeGreaterThan(0);
+    expect(spread / span, `the readings use ${((spread / span) * 100).toFixed(0)}% of the axis`)
+      .toBeGreaterThan(0.5);
+  });
+
+  test("a contested pair lands inside a window you can see, not just a word", async ({ page }) => {
+    await page.goto("/");
+    await page.locator('input[type="file"]').setInputFiles(skillFiles);
+    await page.getByRole("button", { name: "Load model and embed" }).click();
+    await expect(page.getByRole("tab", { name: "Routing" })).toBeVisible({ timeout: 280_000 });
+
+    // Deliberately vague: an utterance that names no skill is the one that splits the field,
+    // which is the state this whole view exists to make visible.
+    await page.getByRole("textbox", { name: "What a user would say" }).fill("help me with this");
+    await page.getByRole("button", { name: "Rank" }).click();
+    await expect(page.locator(".reading").first()).toBeVisible();
+
+    const seen = await page.evaluate(() => {
+      const readings = [...document.querySelectorAll(".reading")].map((el) => ({
+        contested: el.getAttribute("data-contested") === "true",
+        mark: (el.querySelector(".mark") as HTMLElement).getBoundingClientRect(),
+      }));
+      const window = document.querySelector(".window") as HTMLElement | null;
+      const w = window?.getBoundingClientRect();
+      return {
+        anyContested: readings.some((r) => r.contested),
+        hasWindow: window !== null,
+        rows: readings.map((r) => ({
+          contested: r.contested,
+          // The centre of the mark, against the window it is meant to fall in or out of.
+          inside: w ? r.mark.left + r.mark.width / 2 >= w.left - 1 && r.mark.left + r.mark.width / 2 <= w.right + 1 : false,
+        })),
+      };
+    });
+
+    /*
+     * Skipped only when the DATA has nothing contested, never when the window is missing.
+     *
+     * The first version keyed the skip off the element, so deleting the window turned this
+     * green-by-skipping - a guard that disappears along with the thing it guards.
+     */
+    test.skip(!seen.anyContested, "nothing was contested for this utterance, so there is nothing to see");
+
+    expect(seen.hasWindow, "skills are contested but no window is drawn").toBe(true);
+    // Every skill marked contested is inside the window, and nothing else is. The word and
+    // the picture have to agree, or one of them is decoration.
+    for (const r of seen.rows) expect(r.inside).toBe(r.contested);
   });
 
   test("counts tokens with the model's own tokenizer", async ({ page }) => {

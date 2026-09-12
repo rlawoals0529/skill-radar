@@ -3,7 +3,7 @@ import type { Skill, Finding } from "agent-skill-lint/core";
 import { fromDirectory, fromFiles, fromGitHub, fromText, type Loaded } from "./lib/load.js";
 import type { Progress } from "./lib/embed.js";
 import { Ticker, stagger } from "./lib/motion.js";
-import { rank, pairs, type Ranked, type Pair } from "./lib/similarity.js";
+import { axisFor, rank, pairs, type Ranked, type Pair } from "./lib/similarity.js";
 import { Palette } from "./lib/palette.js";
 import palettes from "./theme/palettes.json";
 
@@ -26,6 +26,9 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [utterance, setUtterance] = useState("the PR came back with requested changes");
   const [ranked, setRanked] = useState<Ranked[] | null>(null);
+  // One axis for the whole ranking, so two skills the model cannot separate land in the
+  // same place rather than as two bars of nearly equal length.
+  const axis = useMemo(() => (ranked ? axisFor(ranked) : null), [ranked]);
   const [tab, setTab] = useState<Tab>("routing");
   const [repo, setRepo] = useState(DEMO_REPO);
   const [over, setOver] = useState(false);
@@ -238,28 +241,42 @@ export default function App() {
                 </button>
               </div>
 
-              {ranked && (
-                <div style={{ display: "grid", gap: 7, marginTop: 14 }}>
-                  {ranked.map((r, i) => (
+              {ranked && axis && (
+                <div className="plot">
+                  {/* The coin-flip window, drawn once behind every row. Two skills the model
+                      cannot separate land inside it, in the same place, which is the finding
+                      - and a column of bars drawn from a shared left edge cannot show that. */}
+                  {axis.contested && (
                     <div
-                      key={r.name}
-                      className={r.contested ? "bar contested rise" : "bar rise"}
-                      style={stagger(i)}
-                    >
-                      <i style={{ width: `${Math.max(0, r.score) * 100}%` }} />
-                      <span>
-                        <b>
-                          {r.name} {r.contested && <span className="pill warn">contested</span>}
-                        </b>
-                        <code><Ticker value={r.score} decimals={3} /></code>
+                      className="window"
+                      aria-hidden="true"
+                      style={{
+                        left: `${axis.at(axis.contested.from) * 100}%`,
+                        width: `${(axis.at(axis.contested.to) - axis.at(axis.contested.from)) * 100}%`,
+                      }}
+                    />
+                  )}
+                  {ranked.map((r, i) => (
+                    <div key={r.name} className="reading rise" data-contested={r.contested} style={stagger(i)}>
+                      <span className="reading-name">{r.name}</span>
+                      <span className="track">
+                        <i className="mark" style={{ left: `${axis.at(r.score) * 100}%` }} />
                       </span>
+                      <code className="reading-score"><Ticker value={r.score} decimals={3} /></code>
                     </div>
                   ))}
+                  {/* Both ends carry their real value, because the axis is zoomed to the
+                      scores: without them a gap of 0.02 and a gap of 0.4 look the same. */}
+                  <div className="axis-ends" aria-hidden="true">
+                    <span>{axis.from.toFixed(2)}</span>
+                    <span>{axis.to.toFixed(2)}</span>
+                  </div>
                 </div>
               )}
               <p className="note">
-                <b>Contested</b> means two skills scored within 0.02 of each other. In practice that is
-                a toss-up.
+                Every skill on one axis, zoomed to the scores so the margin that decides the
+                answer is a distance rather than a decimal. The shaded window is 0.02 wide:
+                anything inside it is <b>contested</b>, which in practice is a toss-up.
               </p>
             </section>
           )}
