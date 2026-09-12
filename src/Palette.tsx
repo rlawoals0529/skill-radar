@@ -44,8 +44,13 @@ export function Palette() {
           <fieldset key={g.scheme}>
             <legend>{g.label}</legend>
             {g.themes.map((t) => (
-              <button key={t.id} data-theme={t.id} aria-pressed={t.id === theme} onClick={() => setTheme(t.id)}>
-                <span className="palette-chip" aria-hidden="true" />
+              <button key={t.id} aria-pressed={t.id === theme} onClick={() => setTheme(t.id)}>
+                {/* data-theme goes on the CHIP, not on the button. On the button it also
+                    rescoped --fg and --dim, so each option's LABEL was painted in a palette
+                    the page is not showing, and most of them came out under 4.5:1 on the
+                    current background. The chip is the only part that should be in another
+                    palette, because the colour is the thing it is showing. */}
+                <span className="palette-chip" aria-hidden="true" data-theme={t.id} />
                 {t.label}
               </button>
             ))}

@@ -7,7 +7,9 @@
 
 /* Only what this page needs beyond the shared layers. */
 
-h1 span { color: var(--accent); }
+/* --accent-text, not --accent: the accent is a fill colour, and as 88px type on the page it
+   measured 2.11:1 on the palest palette where large text needs 3. */
+h1 span { color: var(--accent-text, var(--accent)); }
 .tagline { color: var(--dim); font-size: 17px; max-width: 54ch; }
 
 /* Was an outlined pill in the accent colour: a glowing badge, which is its own tell.
@@ -76,7 +78,12 @@ tr.hot td { background: color-mix(in srgb, var(--warn) 12%, transparent); }
   background: var(--accent); border: 1px solid var(--edge); flex: none;
 }
 
-.palette-list { margin-top: 0.8rem; display: grid; gap: 0.9rem; }
+/* `display` on a class beats the user agent's `[hidden] { display: none }`, because author
+   styles win over the UA sheet whatever the specificity. So this list was permanently open:
+   the button said aria-expanded="false" over fifteen visible, tabbable options. Guarding the
+   rule is the fix; `[hidden] { display: none !important }` would work too and would hide the
+   next bug of this shape instead of failing on it. */
+.palette-list:not([hidden]) { margin-top: 0.8rem; display: grid; gap: 0.9rem; }
 .palette-list fieldset { border: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .palette-list legend {
   font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase;
