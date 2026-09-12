@@ -9,6 +9,10 @@ would fire.
 fetched once and cached, after which the page works offline. Nothing you load is uploaded
 anywhere.
 
+## Try it
+
+**[rlawoals0529.github.io/skill-radar](https://rlawoals0529.github.io/skill-radar/)** - paste a skill set, see what fires
+
 ## The problem
 
 A skill fails quietly. Two of them claim the same ground, and which one fires is a toss-up
