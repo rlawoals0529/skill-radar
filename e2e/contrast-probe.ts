@@ -44,6 +44,19 @@ export interface Probe {
   samples: string[];
   /** `TAG.class` of each of those, so a caller can name an element that must have been seen. */
   classes: string[];
+  /**
+   * How many of the palettes actually painted something different.
+   *
+   * Evidence that applying a palette did anything at all. Without it a sweep that silently
+   * fails to switch - the wrong `apply` for how this page loads its palettes, or a scoped
+   * stylesheet that stopped being scoped - measures one palette however many times and
+   * reports that as full coverage.
+   *
+   * A FINGERPRINT per palette, not a count of grounds: one palette paints several surfaces,
+   * so "more than one ground" is satisfied by a sweep that never switched. Ask for a number
+   * near the number of palettes.
+   */
+  distinctPalettes: number;
 }
 
 export interface ProbeOptions {
@@ -56,7 +69,21 @@ export interface ProbeOptions {
    * White is the browser's own default canvas, so it is the default here.
    */
   backdrop?: string;
+  /**
+   * How a palette gets applied.
+   *
+   * Setting `data-theme` on the root is how a page with all fifteen palettes in one scoped
+   * stylesheet switches, which is most of them. A consumer that ships one file per palette
+   * and loads one at a time has no attribute to set, and the default silently does nothing
+   * there - every palette measures identical numbers and the sweep is one palette fifteen
+   * times, reported as fifteen.
+   */
+  apply?: (page: Page, theme: string) => Promise<void>;
 }
+
+const setDataTheme = async (page: Page, theme: string) => {
+  await page.evaluate((id) => document.documentElement.setAttribute("data-theme", id), theme);
+};
 
 /**
  * @param themes the palettes to sweep, from the generated manifest.
@@ -68,16 +95,17 @@ export interface ProbeOptions {
 export async function probeContrast(
   page: Page,
   themes: readonly { id: string }[],
-  { backdrop = "#ffffff" }: ProbeOptions = {},
+  { backdrop = "#ffffff", apply = setDataTheme }: ProbeOptions = {},
 ): Promise<Probe> {
   const failures: Reading[] = [];
   let measured = 0;
   let styles = 0;
   let samples: string[] = [];
   let classes: string[] = [];
+  const fingerprints = new Set<string>();
 
   for (const theme of themes) {
-    await page.evaluate((id) => document.documentElement.setAttribute("data-theme", id), theme.id);
+    await apply(page, theme.id);
     await page.waitForTimeout(SETTLE);
 
     const rows = await page.evaluate((behind: string) => {
@@ -207,6 +235,10 @@ export async function probeContrast(
       classes = rows.map((r) => r.cls);
     }
 
+    // Every colour this palette painted, in one string. Two palettes that produce the same
+    // one are the same palette, whatever the loop thinks it applied.
+    fingerprints.add(rows.map((r) => `${r.color}|${r.bg}`).sort().join(";"));
+
     for (const row of rows) {
       const fg = parse(row.color);
       const bg = parse(row.bg);
@@ -226,7 +258,7 @@ export async function probeContrast(
     }
   }
 
-  return { failures, measured, styles, samples, classes };
+  return { failures, measured, styles, samples, classes, distinctPalettes: fingerprints.size };
 }
 
 export const describeFailures = (f: Reading[]): string =>
