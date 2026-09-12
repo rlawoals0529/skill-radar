@@ -13,7 +13,10 @@
  * you pass it, and Escape puts back the one you arrived with. That is the whole reason the
  * control exists and it is the part a disclosure full of buttons could not do.
  *
- * Closed by default, because a preference is not part of the task.
+ * Three exports, because where the CHOICE lives and where the CONTROL lives are not the same
+ * question. `Palette` answers both for the common case. An app that renders the picker
+ * conditionally - inside a tab panel, say - must keep the choice above it with `useTheme`,
+ * or unmounting the control stops the theme being applied at all.
  */
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { createThemeStore, grouped, type Theme } from "./theme.js";
@@ -24,6 +27,150 @@ export interface ManifestEntry {
   label: string;
   accent: string;
   scheme: string;
+}
+
+/**
+ * Narrow the manifest once, here, rather than casting at every call site.
+ *
+ * A JSON import types `scheme` as string. An unknown value is dark, which is the same rule the
+ * manifest was generated with.
+ */
+export function useThemeList(manifest: readonly ManifestEntry[]): Theme[] {
+  return useMemo(
+    () => manifest.map((t) => ({ ...t, scheme: t.scheme === "light" ? "light" : "dark" })),
+    [manifest],
+  );
+}
+
+/**
+ * The chosen palette, applied to the page and remembered.
+ *
+ * Call this wherever the choice should OUTLIVE the control. Rendering the picker inside
+ * something that unmounts - a tab panel, a drawer - and letting it own the state means the
+ * palette stops being applied the moment you look at another tab.
+ */
+export function useTheme(
+  manifest: readonly ManifestEntry[],
+  storageKey: string,
+  initial = "twilight-comet",
+): [string, (id: string) => void] {
+  const themes = useThemeList(manifest);
+  const [store] = useState(() => createThemeStore(themes, initial, storageKey));
+  const [theme, setTheme] = useState(store.initial);
+  useEffect(() => {
+    store.apply(theme);
+  }, [store, theme]);
+  return [theme, setTheme];
+}
+
+export interface PaletteOptionsProps {
+  themes: readonly ManifestEntry[];
+  theme: string;
+  onPick: (id: string) => void;
+  /** Called after Escape has put the previous palette back, for a disclosure to close on. */
+  onEscape?: () => void;
+}
+
+/** The options themselves: a radio group with one tab stop, arrows, and a live preview. */
+export function PaletteOptions({ themes: manifest, theme, onPick, onEscape }: PaletteOptionsProps) {
+  const themes = useThemeList(manifest);
+  const group = useRef<HTMLDivElement>(null);
+  /** What to put back if this is abandoned rather than decided. */
+  const committed = useRef(theme);
+  const order = grouped(themes).flatMap((g) => g.themes.map((t) => t.id));
+
+  /**
+   * Selection follows focus, which is what makes arrowing a preview rather than a survey.
+   *
+   * It is also the standard behaviour for a radio group, so nothing has to be explained: the
+   * arrow keys move through the options and the page is already wearing the one you are on.
+   */
+  const focusAt = useCallback(
+    (index: number) => {
+      const id = order[(index + order.length) % order.length]!;
+      onPick(id);
+      group.current?.querySelector<HTMLButtonElement>(`[data-id="${id}"]`)?.focus();
+    },
+    [order, onPick],
+  );
+
+  const onKeyDown = (e: React.KeyboardEvent, index: number) => {
+    const moves: Record<string, number> = {
+      ArrowRight: index + 1, ArrowDown: index + 1,
+      ArrowLeft: index - 1, ArrowUp: index - 1,
+      Home: 0, End: order.length - 1,
+    };
+    if (e.key in moves) {
+      e.preventDefault();
+      focusAt(moves[e.key]!);
+      return;
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      // Back to what was on the page when this group was reached. Without it, sweeping through
+      // fifteen palettes to look at them leaves you on whichever one you stopped at.
+      onPick(committed.current);
+      onEscape?.();
+    }
+  };
+
+  return (
+    <>
+      <div
+        className="palette-grid"
+        role="radiogroup"
+        aria-label="Palette"
+        ref={group}
+        /* What Escape puts back is whatever was on the page when this group was reached, which
+           is not always when a disclosure was opened: inline there is no disclosure, and with a
+           mouse the list can be opened long before anything is tried. */
+        onFocusCapture={(e) => {
+          if (!group.current?.contains(e.relatedTarget as Node | null)) committed.current = theme;
+        }}
+      >
+        {grouped(themes).map((g) => (
+          <div className="palette-group" key={g.scheme}>
+            <p className="palette-group-name" aria-hidden="true">{g.label}</p>
+            <div className="palette-row">
+              {g.themes.map((t) => {
+                const at = order.indexOf(t.id);
+                const chosen = t.id === theme;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={chosen}
+                    // One tab stop for the whole group, then arrows. Fifteen tab stops to get
+                    // past a preference is fifteen too many.
+                    tabIndex={chosen ? 0 : -1}
+                    data-id={t.id}
+                    /* The option paints itself in the palette it offers. That is the whole
+                       design: the swatch IS the page it is proposing. */
+                    data-theme={t.id}
+                    className="swatch"
+                    onClick={() => onPick(t.id)}
+                    onKeyDown={(e) => onKeyDown(e, at)}
+                  >
+                    <span className="swatch-page" aria-hidden="true">
+                      <span className="swatch-ink">Aa</span>
+                      <span className="swatch-dot accent" />
+                      <span className="swatch-dot second" />
+                    </span>
+                    <span className="swatch-name">{t.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="palette-hint">
+        Arrow keys try each one on the page. Escape puts back{" "}
+        {themes.find((t) => t.id === committed.current)?.label ?? "the last one"}.
+      </p>
+    </>
+  );
 }
 
 export interface PaletteProps {
@@ -37,152 +184,66 @@ export interface PaletteProps {
    * Show the options without a disclosure around them.
    *
    * For a page that already has somewhere for a preference to live - a settings tab, a
-   * sidebar - where a toggle would be a second door in front of a door somebody has already
+   * sidebar - where a toggle would be a second door in front of one somebody has already
    * opened. The toggle is the default because on most of these pages the picker sits at the
    * bottom of the work, and a preference is not part of the task.
    */
   inline?: boolean;
 }
 
-export function Palette({ themes: manifest, storageKey, initial = "twilight-comet", inline = false }: PaletteProps) {
-  // Narrowed here rather than cast at every call site: a JSON import types `scheme` as string,
-  // and an unknown value is dark, which is the same rule the manifest was written with.
-  const themes = useMemo<Theme[]>(
-    () => manifest.map((t) => ({ ...t, scheme: t.scheme === "light" ? "light" : "dark" })),
-    [manifest],
-  );
-  const [store] = useState(() => createThemeStore(themes, initial, storageKey));
-  const [theme, setTheme] = useState(store.initial);
+/**
+ * The picker, owning its own choice. The common case: one line in an app that renders it once.
+ *
+ * If the picker can unmount while the page stays up, do not use this - hold the choice above
+ * it with `useTheme` and render `PaletteOptions`.
+ */
+export function Palette({ themes, storageKey, initial = "twilight-comet", inline = false }: PaletteProps) {
+  const [theme, setTheme] = useTheme(themes, storageKey, initial);
   const [open, setOpen] = useState(inline);
-  /** What to put back if this is abandoned rather than decided. */
-  const committed = useRef(theme);
-  const group = useRef<HTMLDivElement>(null);
   const listId = useId();
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const list = useThemeList(themes);
+  const current = list.find((t) => t.id === theme);
 
-  useEffect(() => {
-    store.apply(theme);
-  }, [store, theme]);
-
-  const current = themes.find((t) => t.id === theme);
-  const order = grouped(themes).flatMap((g) => g.themes.map((t) => t.id));
-
-  /**
-   * Selection follows focus, which is what makes arrowing a preview rather than a survey.
-   *
-   * It is also the standard behaviour for a radio group, so nothing has to be explained: the
-   * arrow keys move through the options and the page is already wearing the one you are on.
-   */
-  const focusAt = useCallback(
-    (index: number) => {
-      const id = order[(index + order.length) % order.length]!;
-      setTheme(id);
-      group.current?.querySelector<HTMLButtonElement>(`[data-id="${id}"]`)?.focus();
-    },
-    [order],
-  );
-
-  const onKeyDown = (e: React.KeyboardEvent, index: number) => {
-    const keys: Record<string, number> = {
-      ArrowRight: index + 1, ArrowDown: index + 1,
-      ArrowLeft: index - 1, ArrowUp: index - 1,
-      Home: 0, End: order.length - 1,
-    };
-    if (e.key in keys) {
-      e.preventDefault();
-      focusAt(keys[e.key]!);
-      return;
-    }
-    if (e.key === "Escape") {
-      e.preventDefault();
-      // Back to what was on the page when this was reached. Without it, sweeping through
-      // fifteen palettes to look at them leaves you on whichever one you stopped at.
-      setTheme(committed.current);
-      if (inline) return;
-      setOpen(false);
-      group.current?.closest(".palette")?.querySelector<HTMLButtonElement>(".palette-toggle")?.focus();
-    }
-  };
-
-  const toggle = () => {
-    setOpen((was) => {
-      if (!was) committed.current = theme;
-      return !was;
-    });
-  };
+  if (inline) {
+    return (
+      <section className="palette palette-inline">
+        <div id={listId} className="palette-list">
+          <PaletteOptions themes={themes} theme={theme} onPick={setTheme} />
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className={inline ? "palette palette-inline" : "palette"}>
-      {!inline && (
-        <button
-          className="palette-toggle"
-          aria-expanded={open}
-          aria-controls={listId}
-          onClick={toggle}
-        >
-          <span className="palette-chip" aria-hidden="true" data-theme={theme} />
-          {/*
-            The toggle says what it DOES, not only which palette is on. Without the word the
-            button and the option for the same palette share an accessible name, so a screen
-            reader announces "Sakura Lake button" twice for two different controls.
-          */}
-          <span className="sr-only">Palette: </span>
-          {current?.label ?? "Palette"}
-        </button>
-      )}
+    <section className="palette">
+      <button
+        ref={toggleRef}
+        className="palette-toggle"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => setOpen((was) => !was)}
+      >
+        <span className="palette-chip" aria-hidden="true" data-theme={theme} />
+        {/*
+          The toggle says what it DOES, not only which palette is on. Without the word the
+          button and the option for the same palette share an accessible name, so a screen
+          reader announces "Sakura Lake button" twice for two different controls.
+        */}
+        <span className="sr-only">Palette: </span>
+        {current?.label ?? "Palette"}
+      </button>
 
       <div id={listId} hidden={!open} className="palette-list">
-        <div
-          className="palette-grid"
-          role="radiogroup"
-          aria-label="Palette"
-          ref={group}
-          /* What Escape puts back is whatever was on the page when this group was reached,
-             which is not always when a disclosure was opened: inline there is no disclosure,
-             and with a mouse the list can be opened long before anything is tried. */
-          onFocusCapture={(e) => {
-            if (!group.current?.contains(e.relatedTarget as Node | null)) committed.current = theme;
+        <PaletteOptions
+          themes={themes}
+          theme={theme}
+          onPick={setTheme}
+          onEscape={() => {
+            setOpen(false);
+            toggleRef.current?.focus();
           }}
-        >
-          {grouped(themes).map((g) => (
-            <div className="palette-group" key={g.scheme}>
-              <p className="palette-group-name" aria-hidden="true">{g.label}</p>
-              <div className="palette-row">
-                {g.themes.map((t) => {
-                  const at = order.indexOf(t.id);
-                  const chosen = t.id === theme;
-                  return (
-                    <button
-                      key={t.id}
-                      type="button"
-                      role="radio"
-                      aria-checked={chosen}
-                      // One tab stop for the whole group, then arrows. Fifteen tab stops to
-                      // get past a preference is fifteen too many.
-                      tabIndex={chosen ? 0 : -1}
-                      data-id={t.id}
-                      /* The option paints itself in the palette it offers. That is the whole
-                         design: the swatch IS the page it is proposing. */
-                      data-theme={t.id}
-                      className="swatch"
-                      onClick={() => setTheme(t.id)}
-                      onKeyDown={(e) => onKeyDown(e, at)}
-                    >
-                      <span className="swatch-page" aria-hidden="true">
-                        <span className="swatch-ink">Aa</span>
-                        <span className="swatch-dot accent" />
-                        <span className="swatch-dot second" />
-                      </span>
-                      <span className="swatch-name">{t.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-        <p className="palette-hint">
-          Arrow keys try each one on the page. Escape puts back {themes.find((t) => t.id === committed.current)?.label ?? "the last"}.
-        </p>
+        />
       </div>
     </section>
   );

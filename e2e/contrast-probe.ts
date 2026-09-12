@@ -1,7 +1,6 @@
 // Vendored from yozora/js/contrast-probe.ts. Refresh with `node scripts/vendor.mjs` there,
 // never edit here.
 import type { Page } from "@playwright/test";
-import themes from "../src/theme/palettes.json" with { type: "json" };
 
 /**
  * Measure every piece of visible text on the page, in every palette, against the surface it
@@ -47,18 +46,41 @@ export interface Probe {
   classes: string[];
 }
 
-export async function probeContrast(page: Page): Promise<Probe> {
+export interface ProbeOptions {
+  /**
+   * What is behind the page.
+   *
+   * Almost every page paints an opaque ground of its own, and then this never comes up. A
+   * page that does not - a desktop widget floating over somebody's wallpaper - is read
+   * against whatever is behind it, and the only honest answer is to measure the extremes.
+   * White is the browser's own default canvas, so it is the default here.
+   */
+  backdrop?: string;
+}
+
+/**
+ * @param themes the palettes to sweep, from the generated manifest.
+ *
+ * Passed rather than imported, because not every consumer keeps the manifest in the same
+ * place and a probe that reaches for `../src/theme/palettes.json` cannot be used by one that
+ * does not have it.
+ */
+export async function probeContrast(
+  page: Page,
+  themes: readonly { id: string }[],
+  { backdrop = "#ffffff" }: ProbeOptions = {},
+): Promise<Probe> {
   const failures: Reading[] = [];
   let measured = 0;
   let styles = 0;
   let samples: string[] = [];
   let classes: string[] = [];
 
-  for (const theme of themes as { id: string }[]) {
+  for (const theme of themes) {
     await page.evaluate((id) => document.documentElement.setAttribute("data-theme", id), theme.id);
     await page.waitForTimeout(SETTLE);
 
-    const rows = await page.evaluate(() => {
+    const rows = await page.evaluate((behind: string) => {
       const seen = new Set<string>();
       const out: { cls: string; text: string; color: string; bg: string; opacity: number; size: number; weight: string }[] = [];
       // Chromium serialises a color-mix() to `color(srgb r g b)`, not to rgb(). Matching only
@@ -85,17 +107,38 @@ export async function probeContrast(page: Page): Promise<Probe> {
         }
         return fade;
       };
-      // The nearest ancestor that actually paints something. A transparent background means
-      // the text is sitting on whatever is behind it, not on nothing.
-      const bgOf = (el: Element): string => {
-        let n: Element | null = el;
-        while (n) {
-          const c = getComputedStyle(n).backgroundColor;
-          const a = alphaOf(c);
-          if (a !== null && a > 0.99) return c;
-          n = n.parentElement;
+      const rgbOf = (c: string): [number, number, number, number] | null => {
+        const rgb = c.match(/rgba?\(([^)]+)\)/);
+        if (rgb) {
+          const p = rgb[1]!.split(/[,\s/]+/).filter(Boolean).map(Number);
+          return [p[0]!, p[1]!, p[2]!, p[3] ?? 1];
         }
-        return getComputedStyle(document.body).backgroundColor;
+        const srgb = c.match(/color\(\s*srgb\s+([^)]+)\)/);
+        if (srgb) {
+          const p = srgb[1]!.split(/[\s/]+/).filter(Boolean).map(Number);
+          return [p[0]! * 255, p[1]! * 255, p[2]! * 255, p[3] ?? 1];
+        }
+        return null;
+      };
+      const composite = (fg: number[], bg: number[]) => [0, 1, 2].map((i) => fg[i]! * fg[3]! + bg[i]! * (1 - fg[3]!));
+      /*
+       * The ground these glyphs are actually read on, composited from the backdrop forward.
+       *
+       * Stopping at the first OPAQUE ancestor was the first version, and it is right only
+       * while one exists. A panel at 85% over a desktop wallpaper is the ground, and walking
+       * past it to the body measured the wrong thing in both directions: it reported failures
+       * on text that is fine and passed text that is not.
+       */
+      const groundOf = (el: Element): string => {
+        const stack: [number, number, number, number][] = [];
+        for (let n: Element | null = el; n; n = n.parentElement) {
+          const c = rgbOf(getComputedStyle(n).backgroundColor);
+          if (c && c[3] > 0.001) stack.push(c);
+          if (c && c[3] > 0.999) break;
+        }
+        let ground = rgbOf(behind) ?? [255, 255, 255, 1];
+        for (const layer of stack.reverse()) ground = [...composite(layer, ground), 1] as [number, number, number, number];
+        return `rgb(${ground[0]}, ${ground[1]}, ${ground[2]})`;
       };
       for (const el of document.querySelectorAll("body *")) {
         const text = [...el.childNodes]
@@ -116,7 +159,17 @@ export async function probeContrast(page: Page): Promise<Probe> {
          * the PREVIOUS palette's colour against the current background, and the mismatch
          * read as a contrast failure that nobody could see or fix.
          */
-        if (!el.checkVisibility()) continue;
+        /*
+         * opacityProperty, because the default does not check it.
+         *
+         * A tooltip that lives at `opacity: 0` until hover is not on the page, and measuring
+         * it gives 1:1 against its own ground - a finding about text nobody can see, on a
+         * control that works. Two of those came out of one widget's dock labels.
+         *
+         * This is not the same as the disabled exemption below: a disabled control IS
+         * visible and is exempt by rule; this one is simply not being shown.
+         */
+        if (!el.checkVisibility({ opacityProperty: true })) continue;
         const r = el.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) continue;
         /*
@@ -136,7 +189,7 @@ export async function probeContrast(page: Page): Promise<Probe> {
           cls: `${el.tagName}.${el.getAttribute("class") ?? ""}`,
           text: text.slice(0, 30),
           color,
-          bg: bgOf(el),
+          bg: groundOf(el),
           // Opacity on an ancestor fades the text as surely as an alpha in its own colour,
           // and a computed `color` does not carry it. Without this, a block set to 0.6 is
           // measured at the contrast it would have had if somebody had not faded it.
@@ -146,7 +199,7 @@ export async function probeContrast(page: Page): Promise<Probe> {
         });
       }
       return out;
-    });
+    }, backdrop);
 
     if (!styles) {
       styles = rows.length;
