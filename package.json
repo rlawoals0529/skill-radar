@@ -14,10 +14,10 @@
     "e2e:model": "playwright test --grep @model --workers=1"
   },
   "dependencies": {
-    "@huggingface/transformers": "^4.0.0",
+    "@huggingface/transformers": "^4.3.0",
+    "agent-skill-lint": "github:rlawoals0529/skill-lint",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "agent-skill-lint": "github:rlawoals0529/skill-lint"
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
